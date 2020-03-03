@@ -5,8 +5,9 @@ namespace App;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use Notifiable;
 
@@ -16,7 +17,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'username', 'token'
     ];
 
     /**
@@ -37,6 +38,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    public function setUsernameAttribute($username)
+    {
+        $slug = Str::slug($username, "");
+        $this->attributes['username'] = strtolower($slug) . random_int(1, 1000);
+    }
+
     public function profile()
     {
         return $this->hasOne(UserProfile::class);
@@ -47,7 +54,13 @@ class User extends Authenticatable
         return $this->hasMany(Post::class);
     }
 
-    public function roles() {
+    public function roles()
+    {
         return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    public function country()
+    {
+        return $this->hasOneThrough(Country::class, UserProfile::class, 'user_id', 'id', 'id', 'country_id');
     }
 }

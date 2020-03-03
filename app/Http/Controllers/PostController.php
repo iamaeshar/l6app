@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Category;
 use App\Post;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,8 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+        $posts = Post::with(['categories', 'user'])->get();
+        return view('dashboard.posts.index', compact('posts'));
     }
 
     /**
@@ -24,7 +26,8 @@ class PostController extends Controller
      */
     public function create()
     {
-        //
+        $categories = Category::all();
+        return view('dashboard.posts.create', compact('categories'));
     }
 
     /**
@@ -35,7 +38,25 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $filename = sprintf('thumnail_%s.jpg', random_int(1, 1000));
+        if ($request->hasFile('thumbnail')) {
+            $filename = $request->file('thumbnail')->storeAs('posts', $filename, 'public');
+        } else {
+            $filename = null;
+        }
+
+        $post = [
+            'user_id' => 1,
+            'title' => $request->title,
+            'content' => $request->content,
+            'thumbnail' => $filename,
+            'slug' => $request->title,
+        ];
+
+        $post = Post::create($post);
+        $post->categories()->attach($request->categories);
+
+        return redirect()->route('posts.index');
     }
 
     /**
@@ -46,7 +67,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        //
+        return view('dashboard.posts.show', compact('post'));
     }
 
     /**
@@ -57,7 +78,8 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        //
+        $categories = Category::all();
+        return view('dashboard.posts.edit', compact('post', 'categories'));
     }
 
     /**
@@ -69,7 +91,23 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        //
+        $filename = sprintf('thumnail_%s.jpg', random_int(1, 1000));
+        if ($request->hasFile('thumbnail')) {
+            $filename = $request->file('thumbnail')->storeAs('posts', $filename, 'public');
+        } else {
+            $filename = $post->thumbnail;
+        }
+
+        $post->user_id = 1;
+        $post->title = $request->title;
+        $post->content = $request->content;
+        $post->thumbnail = $filename;
+        $post->slug = $request->title;
+        if($post->save()) {
+            $post->categories()->sync($request->categories);
+        }
+
+        return redirect()->route('posts.index');
     }
 
     /**
@@ -80,6 +118,8 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        //
+        $post->categories()->detach();
+        $post->delete();
+        return redirect()->route('posts.index');
     }
 }

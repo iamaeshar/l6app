@@ -44,7 +44,9 @@ return [
         'api' => [
             'driver' => 'token',
             'provider' => 'users',
-            'hash' => false,
+            'storage_key' => 'token',
+            'input_key' => 'token',
+            'hash' => true,
         ],
     ],
 
@@ -64,7 +66,7 @@ return [
     | Supported: "database", "eloquent"
     |
     */
-
+    'password_timeout' => 60,
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
